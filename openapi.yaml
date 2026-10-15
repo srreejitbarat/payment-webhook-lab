@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info:
+  title: Payment Webhook Lab API
+  version: 0.1.0
+  description: Synthetic payment status and transactional outbox exercise.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /api/payments:
+    post:
+      summary: Create a synthetic payment
+      security: [{ApiKey: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [amountMinor, currency]
+              properties:
+                amountMinor: {type: integer, format: int64, minimum: 1, maximum: 9999999999999}
+                currency: {type: string, pattern: '^[A-Z]{3}$'}
+      responses:
+        '201': {description: Payment created}
+        '400': {description: Invalid data}
+        '401': {description: Invalid or missing API key}
+  /api/payments/{id}:
+    get:
+      summary: Read current payment state
+      security: [{ApiKey: []}]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Payment state}
+        '400': {description: Invalid UUID}
+        '401': {description: Invalid or missing API key}
+        '404': {description: Unknown payment}
+  /api/outbox:
+    get:
+      summary: Inspect up to 100 delivery records
+      security: [{ApiKey: []}]
+      responses:
+        '200': {description: Event states and attempt counters}
+        '401': {description: Invalid or missing API key}
+  /webhooks/payments:
+    post:
+      summary: Receive a signed terminal status event
+      description: HMAC-SHA256 covers timestamp + dot + original body. Timestamp window is 300 seconds. Body limit is 64 KiB.
+      parameters:
+        - {name: X-Webhook-Timestamp, in: header, required: true, schema: {type: string}}
+        - {name: X-Webhook-Signature, in: header, required: true, schema: {type: string, pattern: '^[a-fA-F0-9]{64}$'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [eventId, paymentId, amountMinor, currency, status]
+              properties:
+                eventId: {type: string, pattern: '^[A-Za-z0-9_-]{1,80}$'}
+                paymentId: {type: string, format: uuid}
+                amountMinor: {type: integer, format: int64, minimum: 1, maximum: 9999999999999}
+                currency: {type: string, pattern: '^[A-Z]{3}$'}
+                status: {type: string, enum: [SUCCEEDED, FAILED]}
+      responses:
+        '200': {description: APPLIED, DUPLICATE or IGNORED}
+        '400': {description: Invalid JSON or event}
+        '401': {description: Invalid or expired signature}
+        '404': {description: Unknown payment}
+        '409': {description: Event ID, amount or terminal state conflict}
+        '413': {description: Body exceeds limit}
+  /actuator/health:
+    get:
+      summary: Basic health
+      responses:
+        '200': {description: UP}
+        '503': {description: DOWN}
+components:
+  securitySchemes:
+    ApiKey: {type: apiKey, in: header, name: X-Api-Key}
