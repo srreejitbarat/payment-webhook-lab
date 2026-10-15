@@ -1,0 +1,10 @@
+/target/
+/data/
+/.env
+/.idea/
+*.iml
+*.log
+.DS_Store
+
+__pycache__/
+*.pyc
