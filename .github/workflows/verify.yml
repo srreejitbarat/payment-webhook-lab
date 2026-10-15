@@ -1,0 +1,41 @@
+name: Verify Java backend
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: payments
+          POSTGRES_USER: payments
+          POSTGRES_PASSWORD: ci-fixture-not-a-real-credential
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U payments -d payments"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_POSTGRES_URL: jdbc:postgresql://localhost:5432/payments
+      TEST_POSTGRES_USER: payments
+      TEST_POSTGRES_PASSWORD: ci-fixture-not-a-real-credential
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: mvn -B -ntp verify
+      - name: Python demo syntax
+        run: python3 -m py_compile scripts/demo.py scripts/setup_env.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser simulation behavior
+        run: node --test demo/lab.test.mjs
