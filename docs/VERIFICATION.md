@@ -12,9 +12,15 @@ Date: 15 October 2026. Java 17.0.20, Maven 3.9.11, Spring Boot 4.1.1.
 - `python3 -m py_compile scripts/demo.py scripts/setup_env.py`: passed.
 - Interactive browser simulator: 5 Node tests passed, covering duplicates, signature tampering/expiry, terminal conflict, retry limits and single acknowledgement.
 
+## GitHub Actions
+
+- [Run #1](https://github.com/srreejitbarat/payment-webhook-lab/actions/runs/38725635834) succeeded on commit `64117caf27d14f837f52178cb10f2ab880162484` on 15 October 2026.
+- CI Java result: **30 tests passed, zero failures/errors/skips**, including all three PostgreSQL integration tests against the workflow PostgreSQL 17 service.
+- Python syntax and the browser simulation behavior steps also succeeded.
+- Non-blocking runner annotations flag older setup actions for migration.
+
 ## Not yet verified
 
-- PostgreSQL integration requires an actual PostgreSQL service. Three tests are configured for it and skipped otherwise. The GitHub workflow supplies that service; its result must be checked separately.
 - Real Kafka broker delivery: not run. Kafka adapter tests use mocks.
 - Docker image and Compose execution: not run in this workspace.
 - The hosted interactive page simulates application state in the browser. It is not a hosted Java API.
